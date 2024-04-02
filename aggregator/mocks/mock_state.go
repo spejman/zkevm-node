@@ -20,7 +20,7 @@ type StateMock struct {
 }
 
 // AddBatchProof provides a mock function with given fields: ctx, proof, dbTx
-func (_m *StateMock) AddBatchProof(ctx context.Context, proof *state.Proof, dbTx pgx.Tx) error {
+func (_m *StateMock) AddBatchProof(ctx context.Context, proof *state.BatchProof, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, proof, dbTx)
 
 	if len(ret) == 0 {
@@ -28,7 +28,43 @@ func (_m *StateMock) AddBatchProof(ctx context.Context, proof *state.Proof, dbTx
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *state.Proof, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BatchProof, pgx.Tx) error); ok {
+		r0 = rf(ctx, proof, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// AddBlobInnerProof provides a mock function with given fields: ctx, proof, dbTx
+func (_m *StateMock) AddBlobInnerProof(ctx context.Context, proof *state.BlobInnerProof, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, proof, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddBlobInnerProof")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BlobInnerProof, pgx.Tx) error); ok {
+		r0 = rf(ctx, proof, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// AddBlobOuterProof provides a mock function with given fields: ctx, proof, dbTx
+func (_m *StateMock) AddBlobOuterProof(ctx context.Context, proof *state.BlobOuterProof, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, proof, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddBlobOuterProof")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BlobOuterProof, pgx.Tx) error); ok {
 		r0 = rf(ctx, proof, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -68,7 +104,7 @@ func (_m *StateMock) BeginStateTransaction(ctx context.Context) (pgx.Tx, error) 
 }
 
 // CheckProofContainsCompleteSequences provides a mock function with given fields: ctx, proof, dbTx
-func (_m *StateMock) CheckProofContainsCompleteSequences(ctx context.Context, proof *state.Proof, dbTx pgx.Tx) (bool, error) {
+func (_m *StateMock) CheckProofContainsCompleteSequences(ctx context.Context, proof *state.BatchProof, dbTx pgx.Tx) (bool, error) {
 	ret := _m.Called(ctx, proof, dbTx)
 
 	if len(ret) == 0 {
@@ -77,16 +113,16 @@ func (_m *StateMock) CheckProofContainsCompleteSequences(ctx context.Context, pr
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *state.Proof, pgx.Tx) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BatchProof, pgx.Tx) (bool, error)); ok {
 		return rf(ctx, proof, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *state.Proof, pgx.Tx) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BatchProof, pgx.Tx) bool); ok {
 		r0 = rf(ctx, proof, dbTx)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *state.Proof, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *state.BatchProof, pgx.Tx) error); ok {
 		r1 = rf(ctx, proof, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -159,6 +195,42 @@ func (_m *StateMock) DeleteBatchProofs(ctx context.Context, batchNumber uint64, 
 	return r0
 }
 
+// DeleteBlobInnerProof provides a mock function with given fields: ctx, blobInnerNum, dbTx
+func (_m *StateMock) DeleteBlobInnerProof(ctx context.Context, blobInnerNum uint64, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, blobInnerNum, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBlobInnerProof")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, pgx.Tx) error); ok {
+		r0 = rf(ctx, blobInnerNum, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteBlobOuterProof provides a mock function with given fields: ctx, blobOuterNumber, blobOuterNumberFinal, dbTx
+func (_m *StateMock) DeleteBlobOuterProof(ctx context.Context, blobOuterNumber uint64, blobOuterNumberFinal uint64, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, blobOuterNumber, blobOuterNumberFinal, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBlobOuterProof")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, pgx.Tx) error); ok {
+		r0 = rf(ctx, blobOuterNumber, blobOuterNumberFinal, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteUngeneratedBatchProofs provides a mock function with given fields: ctx, dbTx
 func (_m *StateMock) DeleteUngeneratedBatchProofs(ctx context.Context, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, dbTx)
@@ -208,32 +280,101 @@ func (_m *StateMock) GetBatchByNumber(ctx context.Context, batchNumber uint64, d
 }
 
 // GetBatchProofsToAggregate provides a mock function with given fields: ctx, dbTx
-func (_m *StateMock) GetBatchProofsToAggregate(ctx context.Context, dbTx pgx.Tx) (*state.Proof, *state.Proof, error) {
+func (_m *StateMock) GetBatchProofsToAggregate(ctx context.Context, dbTx pgx.Tx) (*state.BatchProof, *state.BatchProof, error) {
 	ret := _m.Called(ctx, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetBatchProofsToAggregate")
 	}
 
-	var r0 *state.Proof
-	var r1 *state.Proof
+	var r0 *state.BatchProof
+	var r1 *state.BatchProof
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) (*state.Proof, *state.Proof, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) (*state.BatchProof, *state.BatchProof, error)); ok {
 		return rf(ctx, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) *state.Proof); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) *state.BatchProof); ok {
 		r0 = rf(ctx, dbTx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*state.Proof)
+			r0 = ret.Get(0).(*state.BatchProof)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, pgx.Tx) *state.Proof); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, pgx.Tx) *state.BatchProof); ok {
 		r1 = rf(ctx, dbTx)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*state.Proof)
+			r1 = ret.Get(1).(*state.BatchProof)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, pgx.Tx) error); ok {
+		r2 = rf(ctx, dbTx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetBlobInnerToProve provides a mock function with given fields: ctx, lastVerfiedBlobInnerNumber, maxL1Block, dbTx
+func (_m *StateMock) GetBlobInnerToProve(ctx context.Context, lastVerfiedBlobInnerNumber uint64, maxL1Block uint64, dbTx pgx.Tx) (*state.BlobInner, error) {
+	ret := _m.Called(ctx, lastVerfiedBlobInnerNumber, maxL1Block, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBlobInnerToProve")
+	}
+
+	var r0 *state.BlobInner
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, pgx.Tx) (*state.BlobInner, error)); ok {
+		return rf(ctx, lastVerfiedBlobInnerNumber, maxL1Block, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, pgx.Tx) *state.BlobInner); ok {
+		r0 = rf(ctx, lastVerfiedBlobInnerNumber, maxL1Block, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*state.BlobInner)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, pgx.Tx) error); ok {
+		r1 = rf(ctx, lastVerfiedBlobInnerNumber, maxL1Block, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBlobOuterToProve provides a mock function with given fields: ctx, dbTx
+func (_m *StateMock) GetBlobOuterToProve(ctx context.Context, dbTx pgx.Tx) (*state.BatchProof, *state.BlobInnerProof, error) {
+	ret := _m.Called(ctx, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBlobOuterToProve")
+	}
+
+	var r0 *state.BatchProof
+	var r1 *state.BlobInnerProof
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) (*state.BatchProof, *state.BlobInnerProof, error)); ok {
+		return rf(ctx, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) *state.BatchProof); ok {
+		r0 = rf(ctx, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*state.BatchProof)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, pgx.Tx) *state.BlobInnerProof); ok {
+		r1 = rf(ctx, dbTx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*state.BlobInnerProof)
 		}
 	}
 
@@ -334,6 +475,36 @@ func (_m *StateMock) GetLastVerifiedBatch(ctx context.Context, dbTx pgx.Tx) (*st
 	return r0, r1
 }
 
+// GetLastVerifiedBlobInner provides a mock function with given fields: ctx, dbTx
+func (_m *StateMock) GetLastVerifiedBlobInner(ctx context.Context, dbTx pgx.Tx) (*state.BlobInner, error) {
+	ret := _m.Called(ctx, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLastVerifiedBlobInner")
+	}
+
+	var r0 *state.BlobInner
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) (*state.BlobInner, error)); ok {
+		return rf(ctx, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) *state.BlobInner); ok {
+		r0 = rf(ctx, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*state.BlobInner)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, pgx.Tx) error); ok {
+		r1 = rf(ctx, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetLeafsByL1InfoRoot provides a mock function with given fields: ctx, l1InfoRoot, dbTx
 func (_m *StateMock) GetLeafsByL1InfoRoot(ctx context.Context, l1InfoRoot common.Hash, dbTx pgx.Tx) ([]state.L1InfoTreeExitRootStorageEntry, error) {
 	ret := _m.Called(ctx, l1InfoRoot, dbTx)
@@ -365,23 +536,23 @@ func (_m *StateMock) GetLeafsByL1InfoRoot(ctx context.Context, l1InfoRoot common
 }
 
 // GetProofReadyForFinal provides a mock function with given fields: ctx, lastVerfiedBatchNumber, dbTx
-func (_m *StateMock) GetProofReadyForFinal(ctx context.Context, lastVerfiedBatchNumber uint64, dbTx pgx.Tx) (*state.Proof, error) {
+func (_m *StateMock) GetProofReadyForFinal(ctx context.Context, lastVerfiedBatchNumber uint64, dbTx pgx.Tx) (*state.BatchProof, error) {
 	ret := _m.Called(ctx, lastVerfiedBatchNumber, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetProofReadyForFinal")
 	}
 
-	var r0 *state.Proof
+	var r0 *state.BatchProof
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, pgx.Tx) (*state.Proof, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, pgx.Tx) (*state.BatchProof, error)); ok {
 		return rf(ctx, lastVerfiedBatchNumber, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, pgx.Tx) *state.Proof); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, pgx.Tx) *state.BatchProof); ok {
 		r0 = rf(ctx, lastVerfiedBatchNumber, dbTx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*state.Proof)
+			r0 = ret.Get(0).(*state.BatchProof)
 		}
 	}
 
@@ -485,7 +656,7 @@ func (_m *StateMock) GetVirtualBatchToProve(ctx context.Context, lastVerfiedBatc
 }
 
 // UpdateBatchProof provides a mock function with given fields: ctx, proof, dbTx
-func (_m *StateMock) UpdateBatchProof(ctx context.Context, proof *state.Proof, dbTx pgx.Tx) error {
+func (_m *StateMock) UpdateBatchProof(ctx context.Context, proof *state.BatchProof, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, proof, dbTx)
 
 	if len(ret) == 0 {
@@ -493,7 +664,43 @@ func (_m *StateMock) UpdateBatchProof(ctx context.Context, proof *state.Proof, d
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *state.Proof, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BatchProof, pgx.Tx) error); ok {
+		r0 = rf(ctx, proof, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateBlobInnerProof provides a mock function with given fields: ctx, proof, dbTx
+func (_m *StateMock) UpdateBlobInnerProof(ctx context.Context, proof *state.BlobInnerProof, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, proof, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBlobInnerProof")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BlobInnerProof, pgx.Tx) error); ok {
+		r0 = rf(ctx, proof, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateBlobOuterProof provides a mock function with given fields: ctx, proof, dbTx
+func (_m *StateMock) UpdateBlobOuterProof(ctx context.Context, proof *state.BlobOuterProof, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, proof, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateBlobOuterProof")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *state.BlobOuterProof, pgx.Tx) error); ok {
 		r0 = rf(ctx, proof, dbTx)
 	} else {
 		r0 = ret.Error(0)

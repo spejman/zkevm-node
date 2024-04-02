@@ -1098,9 +1098,9 @@ func (etherMan *Client) BuildTrustedVerifyBatchesTxData(lastVerifiedBatch, newVe
 	var newStateRoot [32]byte
 	copy(newStateRoot[:], inputs.NewStateRoot)
 
-	proof, err := convertProof(inputs.FinalProof.Proof)
+	proof, err := convertProof(inputs.FinalProof.Data)
 	if err != nil {
-		log.Errorf("error converting proof. Error: %v, Proof: %s", err, inputs.FinalProof.Proof)
+		log.Errorf("error converting proof. Error: %v, Proof: %s", err, inputs.FinalProof.Data)
 		return nil, nil, err
 	}
 

@@ -22,6 +22,8 @@ type proverInterface interface {
 	IsIdle() (bool, error)
 	BatchProof(input *prover.InputProver) (*string, error)
 	AggregatedProof(inputProof1, inputProof2 string) (*string, error)
+	BlobInnerProof(input *prover.InputBlobInnerProver) (*string, error)
+	BlobOuterProof(batchProof, blonInnerProof string) (*string, error)
 	FinalProof(inputProof string, aggregatorAddr string) (*string, error)
 	WaitRecursiveProof(ctx context.Context, proofID string) (string, error)
 	WaitFinalProof(ctx context.Context, proofID string) (*prover.FinalProof, error)
@@ -52,14 +54,14 @@ type aggregatorTxProfitabilityChecker interface {
 // stateInterface gathers the methods to interact with the state.
 type stateInterface interface {
 	BeginStateTransaction(ctx context.Context) (pgx.Tx, error)
-	CheckProofContainsCompleteSequences(ctx context.Context, proof *state.Proof, dbTx pgx.Tx) (bool, error)
+	CheckProofContainsCompleteSequences(ctx context.Context, proof *state.BatchProof, dbTx pgx.Tx) (bool, error)
 	GetLastVerifiedBatch(ctx context.Context, dbTx pgx.Tx) (*state.VerifiedBatch, error)
-	GetProofReadyForFinal(ctx context.Context, lastVerfiedBatchNumber uint64, dbTx pgx.Tx) (*state.Proof, error)
+	GetProofReadyForFinal(ctx context.Context, lastVerfiedBatchNumber uint64, dbTx pgx.Tx) (*state.BatchProof, error)
 	GetVirtualBatchToProve(ctx context.Context, lastVerfiedBatchNumber uint64, maxL1Block uint64, dbTx pgx.Tx) (*state.Batch, error)
-	GetBatchProofsToAggregate(ctx context.Context, dbTx pgx.Tx) (*state.Proof, *state.Proof, error)
+	GetBatchProofsToAggregate(ctx context.Context, dbTx pgx.Tx) (*state.BatchProof, *state.BatchProof, error)
 	GetBatchByNumber(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) (*state.Batch, error)
-	AddBatchProof(ctx context.Context, proof *state.Proof, dbTx pgx.Tx) error
-	UpdateBatchProof(ctx context.Context, proof *state.Proof, dbTx pgx.Tx) error
+	AddBatchProof(ctx context.Context, proof *state.BatchProof, dbTx pgx.Tx) error
+	UpdateBatchProof(ctx context.Context, proof *state.BatchProof, dbTx pgx.Tx) error
 	DeleteBatchProofs(ctx context.Context, batchNumber uint64, batchNumberFinal uint64, dbTx pgx.Tx) error
 	DeleteUngeneratedBatchProofs(ctx context.Context, dbTx pgx.Tx) error
 	CleanupBatchProofs(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) error
@@ -69,4 +71,13 @@ type stateInterface interface {
 	GetVirtualBatchParentHash(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) (common.Hash, error)
 	GetForcedBatchParentHash(ctx context.Context, forcedBatchNumber uint64, dbTx pgx.Tx) (common.Hash, error)
 	GetVirtualBatch(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) (*state.VirtualBatch, error)
+	GetLastVerifiedBlobInner(ctx context.Context, dbTx pgx.Tx) (*state.BlobInner, error)
+	GetBlobInnerToProve(ctx context.Context, lastVerfiedBlobInnerNumber uint64, maxL1Block uint64, dbTx pgx.Tx) (*state.BlobInner, error)
+	AddBlobInnerProof(ctx context.Context, proof *state.BlobInnerProof, dbTx pgx.Tx) error
+	UpdateBlobInnerProof(ctx context.Context, proof *state.BlobInnerProof, dbTx pgx.Tx) error
+	DeleteBlobInnerProof(ctx context.Context, blobInnerNum uint64, dbTx pgx.Tx) error
+	GetBlobOuterToProve(ctx context.Context, dbTx pgx.Tx) (*state.BatchProof, *state.BlobInnerProof, error)
+	AddBlobOuterProof(ctx context.Context, proof *state.BlobOuterProof, dbTx pgx.Tx) error
+	UpdateBlobOuterProof(ctx context.Context, proof *state.BlobOuterProof, dbTx pgx.Tx) error
+	DeleteBlobOuterProof(ctx context.Context, blobOuterNumber uint64, blobOuterNumberFinal uint64, dbTx pgx.Tx) error
 }

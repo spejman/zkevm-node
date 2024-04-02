@@ -47,10 +47,12 @@ func TestSendFinalProof(t *testing.T) {
 	proofID := "proofId"
 	proverName := "proverName"
 	proverID := "proverID"
-	recursiveProof := &state.Proof{
-		Prover:           &proverName,
-		ProverID:         &proverID,
-		ProofID:          &proofID,
+	recursiveProof := &state.BatchProof{
+		Proof: state.Proof{
+			Prover:   &proverName,
+			ProverID: &proverID,
+			Id:       &proofID,
+		},
 		BatchNumber:      batchNum,
 		BatchNumberFinal: batchNumFinal,
 	}
@@ -237,12 +239,12 @@ func TestTryAggregateProofs(t *testing.T) {
 	matchAggregatorCtxFn := func(ctx context.Context) bool { return ctx.Value("owner") == "aggregator" }
 	batchNum := uint64(23)
 	batchNumFinal := uint64(42)
-	proof1 := state.Proof{
-		Proof:       "proof1",
+	proof1 := state.BatchProof{
+		Proof:       state.Proof{Data: "proof1"},
 		BatchNumber: batchNum,
 	}
-	proof2 := state.Proof{
-		Proof:            "proof2",
+	proof2 := state.BatchProof{
+		Proof:            state.Proof{Data: "proof2"},
 		BatchNumberFinal: batchNumFinal,
 	}
 	testCases := []struct {
@@ -289,7 +291,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(errBanana).
 					Once()
@@ -312,23 +314,23 @@ func TestTryAggregateProofs(t *testing.T) {
 				proof1GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				proof2GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(nil, errBanana).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(nil, errBanana).Once()
 				m.stateMock.On("BeginStateTransaction", mock.MatchedBy(matchAggregatorCtxFn)).Return(dbTx, nil).Once().NotBefore(lockProofsTxBegin)
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -336,7 +338,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -361,24 +363,24 @@ func TestTryAggregateProofs(t *testing.T) {
 				proof1GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				proof2GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(&proofID, nil).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return("", errBanana).Once()
 				m.stateMock.On("BeginStateTransaction", mock.MatchedBy(matchAggregatorCtxFn)).Return(dbTx, nil).Once().NotBefore(lockProofsTxBegin)
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -386,7 +388,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -411,24 +413,24 @@ func TestTryAggregateProofs(t *testing.T) {
 				proof1GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(&proofID, nil).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return("", errBanana).Once()
 				m.stateMock.On("BeginStateTransaction", mock.MatchedBy(matchAggregatorCtxFn)).Return(dbTx, nil).Once().NotBefore(lockProofsTxBegin)
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(errBanana).
 					Once().
@@ -453,18 +455,18 @@ func TestTryAggregateProofs(t *testing.T) {
 				proof1GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				proof2GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(&proofID, nil).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return(recursiveProof, nil).Once()
 				m.stateMock.On("DeleteBatchProofs", mock.MatchedBy(matchProverCtxFn), proof1.BatchNumber, proof2.BatchNumberFinal, dbTx).Return(errBanana).Once()
 				dbTx.On("Rollback", mock.MatchedBy(matchProverCtxFn)).Return(nil).Once()
@@ -472,7 +474,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -480,7 +482,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -505,18 +507,18 @@ func TestTryAggregateProofs(t *testing.T) {
 				proof1GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				proof2GeneratingTrueCall := m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(&proofID, nil).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return(recursiveProof, nil).Once()
 				m.stateMock.On("DeleteBatchProofs", mock.MatchedBy(matchProverCtxFn), proof1.BatchNumber, proof2.BatchNumberFinal, dbTx).Return(nil).Once()
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, dbTx).Return(errBanana).Once()
@@ -525,7 +527,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -533,7 +535,7 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.Nil(args[1].(*state.Proof).GeneratingSince)
+						assert.Nil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once().
@@ -558,47 +560,47 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(&proofID, nil).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return(recursiveProof, nil).Once()
 				m.stateMock.On("DeleteBatchProofs", mock.MatchedBy(matchProverCtxFn), proof1.BatchNumber, proof2.BatchNumberFinal, dbTx).Return(nil).Once()
 				expectedInputProver := map[string]interface{}{
-					"recursive_proof_1": proof1.Proof,
-					"recursive_proof_2": proof2.Proof,
+					"recursive_proof_1": proof1.Data,
+					"recursive_proof_2": proof2.Data,
 				}
 				b, err := json.Marshal(expectedInputProver)
 				require.NoError(err)
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, dbTx).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(proof1.BatchNumber, proof.BatchNumber)
 						assert.Equal(proof2.BatchNumberFinal, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
 						assert.Equal(&proverID, proof.ProverID)
 						assert.Equal(string(b), proof.InputProver)
-						assert.Equal(recursiveProof, proof.Proof)
+						assert.Equal(recursiveProof, proof.Data)
 						assert.InDelta(time.Now().Unix(), proof.GeneratingSince.Unix(), float64(time.Second))
 					},
 				).Return(nil).Once()
 				m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(proof1.BatchNumber, proof.BatchNumber)
 						assert.Equal(proof2.BatchNumberFinal, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
 						assert.Equal(&proverID, proof.ProverID)
 						assert.Equal(string(b), proof.InputProver)
-						assert.Equal(recursiveProof, proof.Proof)
+						assert.Equal(recursiveProof, proof.Data)
 						assert.Nil(proof.GeneratingSince)
 					},
 				).Return(nil).Once()
@@ -622,35 +624,35 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof1, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proof2, dbTx).
 					Run(func(args mock.Arguments) {
-						assert.NotNil(args[1].(*state.Proof).GeneratingSince)
+						assert.NotNil(args[1].(*state.BatchProof).GeneratingSince)
 					}).
 					Return(nil).
 					Once()
-				m.proverMock.On("AggregatedProof", proof1.Proof, proof2.Proof).Return(&proofID, nil).Once()
+				m.proverMock.On("AggregatedProof", proof1.Data, proof2.Data).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return(recursiveProof, nil).Once()
 				m.stateMock.On("DeleteBatchProofs", mock.MatchedBy(matchProverCtxFn), proof1.BatchNumber, proof2.BatchNumberFinal, dbTx).Return(nil).Once()
 				expectedInputProver := map[string]interface{}{
-					"recursive_proof_1": proof1.Proof,
-					"recursive_proof_2": proof2.Proof,
+					"recursive_proof_1": proof1.Data,
+					"recursive_proof_2": proof2.Data,
 				}
 				b, err := json.Marshal(expectedInputProver)
 				require.NoError(err)
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, dbTx).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(proof1.BatchNumber, proof.BatchNumber)
 						assert.Equal(proof2.BatchNumberFinal, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
 						assert.Equal(&proverID, proof.ProverID)
 						assert.Equal(string(b), proof.InputProver)
-						assert.Equal(recursiveProof, proof.Proof)
+						assert.Equal(recursiveProof, proof.Data)
 						assert.InDelta(time.Now().Unix(), proof.GeneratingSince.Unix(), float64(time.Second))
 					},
 				).Return(nil).Once()
@@ -662,13 +664,13 @@ func TestTryAggregateProofs(t *testing.T) {
 				m.stateMock.On("GetLastVerifiedBatch", mock.MatchedBy(matchProverCtxFn), nil).Return(nil, errBanana).Once().NotBefore(isSyncedCall)
 				m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(proof1.BatchNumber, proof.BatchNumber)
 						assert.Equal(proof2.BatchNumberFinal, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
 						assert.Equal(&proverID, proof.ProverID)
 						assert.Equal(string(b), proof.InputProver)
-						assert.Equal(recursiveProof, proof.Proof)
+						assert.Equal(recursiveProof, proof.Data)
 						assert.Nil(proof.GeneratingSince)
 					},
 				).Return(nil).Once()
@@ -779,7 +781,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.stateMock.On("GetVirtualBatchToProve", mock.MatchedBy(matchProverCtxFn), lastVerifiedBatchNum, mock.Anything, nil).Return(&batchToProve, nil).Once()
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
@@ -802,7 +804,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.etherman.On("GetLatestBlockHeader", mock.Anything).Return(&types.Header{Number: new(big.Int).SetUint64(1)}, nil).Once()
 				m.stateMock.On("GetVirtualBatch", mock.Anything, lastVerifiedBatchNum+1, nil).Return(&vb, nil).Twice()
 				m.stateMock.On("GetLeafsByL1InfoRoot", mock.Anything, *vb.L1InfoRoot, nil).Return([]state.L1InfoTreeExitRootStorageEntry{}, nil).Twice()
-				expectedInputProver, err := a.buildInputProver(context.Background(), &batchToProve)
+				expectedInputProver, err := a.buildBatchProverInputs(context.Background(), &batchToProve)
 				require.NoError(err)
 				m.proverMock.On("BatchProof", expectedInputProver).Return(nil, errBanana).Once()
 				m.stateMock.On("DeleteBatchProofs", mock.MatchedBy(matchAggregatorCtxFn), batchToProve.BatchNumber, batchToProve.BatchNumber, nil).Return(nil).Once()
@@ -822,7 +824,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.stateMock.On("GetVirtualBatchToProve", mock.MatchedBy(matchProverCtxFn), lastVerifiedBatchNum, mock.Anything, nil).Return(&batchToProve, nil).Once()
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
@@ -845,7 +847,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.etherman.On("GetLatestBlockHeader", mock.Anything).Return(&types.Header{Number: new(big.Int).SetUint64(1)}, nil).Once()
 				m.stateMock.On("GetVirtualBatch", mock.Anything, lastVerifiedBatchNum+1, nil).Return(&vb, nil).Twice()
 				m.stateMock.On("GetLeafsByL1InfoRoot", mock.Anything, *vb.L1InfoRoot, nil).Return([]state.L1InfoTreeExitRootStorageEntry{}, nil).Twice()
-				expectedInputProver, err := a.buildInputProver(context.Background(), &batchToProve)
+				expectedInputProver, err := a.buildBatchProverInputs(context.Background(), &batchToProve)
 				require.NoError(err)
 				m.proverMock.On("BatchProof", expectedInputProver).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return("", errBanana).Once()
@@ -866,7 +868,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.stateMock.On("GetVirtualBatchToProve", mock.MatchedBy(matchProverCtxFn), lastVerifiedBatchNum, mock.Anything, nil).Return(&batchToProve, nil).Once()
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
@@ -889,7 +891,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.etherman.On("GetLatestBlockHeader", mock.Anything).Return(&types.Header{Number: new(big.Int).SetUint64(1)}, nil).Once()
 				m.stateMock.On("GetVirtualBatch", mock.Anything, lastVerifiedBatchNum+1, nil).Return(&vb, nil).Twice()
 				m.stateMock.On("GetLeafsByL1InfoRoot", mock.Anything, *vb.L1InfoRoot, nil).Return([]state.L1InfoTreeExitRootStorageEntry{}, nil).Twice()
-				expectedInputProver, err := a.buildInputProver(context.Background(), &batchToProve)
+				expectedInputProver, err := a.buildBatchProverInputs(context.Background(), &batchToProve)
 				require.NoError(err)
 				m.proverMock.On("BatchProof", expectedInputProver).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return("", errBanana).Once()
@@ -910,7 +912,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.stateMock.On("GetVirtualBatchToProve", mock.MatchedBy(matchProverCtxFn), lastVerifiedBatchNum, mock.Anything, nil).Return(&batchToProve, nil).Once()
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
@@ -933,7 +935,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.etherman.On("GetLatestBlockHeader", mock.Anything).Return(&types.Header{Number: new(big.Int).SetUint64(1)}, nil).Once()
 				m.stateMock.On("GetVirtualBatch", mock.Anything, lastVerifiedBatchNum+1, nil).Return(&vb, nil).Twice()
 				m.stateMock.On("GetLeafsByL1InfoRoot", mock.Anything, *vb.L1InfoRoot, nil).Return([]state.L1InfoTreeExitRootStorageEntry{}, nil).Twice()
-				expectedInputProver, err := a.buildInputProver(context.Background(), &batchToProve)
+				expectedInputProver, err := a.buildBatchProverInputs(context.Background(), &batchToProve)
 				require.NoError(err)
 				m.proverMock.On("BatchProof", expectedInputProver).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return(recursiveProof, nil).Once()
@@ -941,13 +943,13 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				require.NoError(err)
 				m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
 						assert.Equal(&proverID, proof.ProverID)
 						assert.Equal(string(b), proof.InputProver)
-						assert.Equal(recursiveProof, proof.Proof)
+						assert.Equal(recursiveProof, proof.Data)
 						assert.Nil(proof.GeneratingSince)
 					},
 				).Return(nil).Once()
@@ -968,7 +970,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.stateMock.On("GetVirtualBatchToProve", mock.MatchedBy(matchProverCtxFn), lastVerifiedBatchNum, mock.Anything, nil).Return(&batchToProve, nil).Once()
 				m.stateMock.On("AddBatchProof", mock.MatchedBy(matchProverCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
@@ -990,7 +992,7 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				}
 				m.stateMock.On("GetVirtualBatch", mock.Anything, lastVerifiedBatchNum+1, nil).Return(&vb, nil).Twice()
 				m.stateMock.On("GetLeafsByL1InfoRoot", mock.Anything, *vb.L1InfoRoot, nil).Return([]state.L1InfoTreeExitRootStorageEntry{}, nil).Twice()
-				expectedInputProver, err := a.buildInputProver(context.Background(), &batchToProve)
+				expectedInputProver, err := a.buildBatchProverInputs(context.Background(), &batchToProve)
 				require.NoError(err)
 				m.proverMock.On("BatchProof", expectedInputProver).Return(&proofID, nil).Once()
 				m.proverMock.On("WaitRecursiveProof", mock.MatchedBy(matchProverCtxFn), proofID).Return(recursiveProof, nil).Once()
@@ -1005,13 +1007,13 @@ func TestTryGenerateBatchProof(t *testing.T) {
 				m.stateMock.On("GetLastVerifiedBatch", mock.MatchedBy(matchProverCtxFn), nil).Return(nil, errBanana).Once().NotBefore(isSyncedCall)
 				m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), mock.Anything, nil).Run(
 					func(args mock.Arguments) {
-						proof := args[1].(*state.Proof)
+						proof := args[1].(*state.BatchProof)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumber)
 						assert.Equal(batchToProve.BatchNumber, proof.BatchNumberFinal)
 						assert.Equal(&proverName, proof.Prover)
 						assert.Equal(&proverID, proof.ProverID)
 						assert.Equal(string(b), proof.InputProver)
-						assert.Equal(recursiveProof, proof.Proof)
+						assert.Equal(recursiveProof, proof.Data)
 						assert.Nil(proof.GeneratingSince)
 					},
 				).Return(nil).Once()
@@ -1072,21 +1074,25 @@ func TestTryBuildFinalProof(t *testing.T) {
 	proverID := "proverID"
 	finalProofID := "finalProofID"
 	finalProof := prover.FinalProof{
-		Proof: "",
+		Data: "",
 		Public: &prover.PublicInputsExtended{
 			NewStateRoot:     []byte("newStateRoot"),
 			NewLocalExitRoot: []byte("newLocalExitRoot"),
 		},
 	}
-	proofToVerify := state.Proof{
-		ProofID:          &proofID,
-		Proof:            proof,
+	proofToVerify := state.BatchProof{
+		Proof: state.Proof{
+			Id:   &proofID,
+			Data: proof,
+		},
 		BatchNumber:      batchNum,
 		BatchNumberFinal: batchNumFinal,
 	}
-	invalidProof := state.Proof{
-		ProofID:          &proofID,
-		Proof:            proof,
+	invalidProof := state.BatchProof{
+		Proof: state.Proof{
+			Id:   &proofID,
+			Data: proof,
+		},
 		BatchNumber:      uint64(123),
 		BatchNumberFinal: uint64(456),
 	}
@@ -1098,7 +1104,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 	matchAggregatorCtxFn := func(ctx context.Context) bool { return ctx.Value("owner") == "aggregator" }
 	testCases := []struct {
 		name           string
-		proof          *state.Proof
+		proof          *state.BatchProof
 		setup          func(mox, *Aggregator)
 		asserts        func(bool, *Aggregator, error)
 		assertFinalMsg func(*finalProofMsg)
@@ -1140,7 +1146,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 				m.etherman.On("GetLatestVerifiedBatchNum").Return(latestVerifiedBatchNum, nil).Once()
 				m.stateMock.On("GetProofReadyForFinal", mock.MatchedBy(matchProverCtxFn), latestVerifiedBatchNum, nil).Return(&proofToVerify, nil).Once()
 				proofGeneratingTrueCall := m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proofToVerify, nil).Return(nil).Once()
-				m.proverMock.On("FinalProof", proofToVerify.Proof, from.String()).Return(nil, errBanana).Once()
+				m.proverMock.On("FinalProof", proofToVerify.Data, from.String()).Return(nil, errBanana).Once()
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proofToVerify, nil).
 					Return(nil).
@@ -1162,7 +1168,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 				m.etherman.On("GetLatestVerifiedBatchNum").Return(latestVerifiedBatchNum, nil).Once()
 				m.stateMock.On("GetProofReadyForFinal", mock.MatchedBy(matchProverCtxFn), latestVerifiedBatchNum, nil).Return(&proofToVerify, nil).Once()
 				proofGeneratingTrueCall := m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proofToVerify, nil).Return(nil).Once()
-				m.proverMock.On("FinalProof", proofToVerify.Proof, from.String()).Return(&finalProofID, nil).Once()
+				m.proverMock.On("FinalProof", proofToVerify.Data, from.String()).Return(&finalProofID, nil).Once()
 				m.proverMock.On("WaitFinalProof", mock.MatchedBy(matchProverCtxFn), finalProofID).Return(nil, errBanana).Once()
 				m.stateMock.
 					On("UpdateBatchProof", mock.MatchedBy(matchAggregatorCtxFn), &proofToVerify, nil).
@@ -1215,7 +1221,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 				m.etherman.On("GetLatestVerifiedBatchNum").Return(latestVerifiedBatchNum, nil).Once()
 				m.stateMock.On("GetProofReadyForFinal", mock.MatchedBy(matchProverCtxFn), latestVerifiedBatchNum, nil).Return(&proofToVerify, nil).Once()
 				m.stateMock.On("UpdateBatchProof", mock.MatchedBy(matchProverCtxFn), &proofToVerify, nil).Return(nil).Once()
-				m.proverMock.On("FinalProof", proofToVerify.Proof, from.String()).Return(&finalProofID, nil).Once()
+				m.proverMock.On("FinalProof", proofToVerify.Data, from.String()).Return(&finalProofID, nil).Once()
 				m.proverMock.On("WaitFinalProof", mock.MatchedBy(matchProverCtxFn), finalProofID).Return(&finalProof, nil).Once()
 			},
 			asserts: func(result bool, a *Aggregator, err error) {
@@ -1223,7 +1229,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 				assert.NoError(err)
 			},
 			assertFinalMsg: func(msg *finalProofMsg) {
-				assert.Equal(finalProof.Proof, msg.finalProof.Proof)
+				assert.Equal(finalProof.Data, msg.finalProof.Data)
 				assert.Equal(finalProof.Public.NewStateRoot, msg.finalProof.Public.NewStateRoot)
 				assert.Equal(finalProof.Public.NewLocalExitRoot, msg.finalProof.Public.NewLocalExitRoot)
 			},
@@ -1285,7 +1291,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 				m.stateMock.On("GetLastVerifiedBatch", mock.MatchedBy(matchProverCtxFn), nil).Return(&verifiedBatch, nil).Twice()
 				m.etherman.On("GetLatestVerifiedBatchNum").Return(latestVerifiedBatchNum, nil).Once()
 				m.stateMock.On("CheckProofContainsCompleteSequences", mock.MatchedBy(matchProverCtxFn), &proofToVerify, nil).Return(true, nil).Once()
-				m.proverMock.On("FinalProof", proofToVerify.Proof, from.String()).Return(&finalProofID, nil).Once()
+				m.proverMock.On("FinalProof", proofToVerify.Data, from.String()).Return(&finalProofID, nil).Once()
 				m.proverMock.On("WaitFinalProof", mock.MatchedBy(matchProverCtxFn), finalProofID).Return(&finalProof, nil).Once()
 			},
 			asserts: func(result bool, a *Aggregator, err error) {
@@ -1293,7 +1299,7 @@ func TestTryBuildFinalProof(t *testing.T) {
 				assert.NoError(err)
 			},
 			assertFinalMsg: func(msg *finalProofMsg) {
-				assert.Equal(finalProof.Proof, msg.finalProof.Proof)
+				assert.Equal(finalProof.Data, msg.finalProof.Data)
 				assert.Equal(finalProof.Public.NewStateRoot, msg.finalProof.Public.NewStateRoot)
 				assert.Equal(finalProof.Public.NewLocalExitRoot, msg.finalProof.Public.NewLocalExitRoot)
 			},

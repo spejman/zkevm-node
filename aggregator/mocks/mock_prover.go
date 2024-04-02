@@ -92,6 +92,66 @@ func (_m *ProverMock) BatchProof(input *prover.InputProver) (*string, error) {
 	return r0, r1
 }
 
+// BlobInnerProof provides a mock function with given fields: input
+func (_m *ProverMock) BlobInnerProof(input *prover.InputBlobInnerProver) (*string, error) {
+	ret := _m.Called(input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BlobInnerProof")
+	}
+
+	var r0 *string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*prover.InputBlobInnerProver) (*string, error)); ok {
+		return rf(input)
+	}
+	if rf, ok := ret.Get(0).(func(*prover.InputBlobInnerProver) *string); ok {
+		r0 = rf(input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*prover.InputBlobInnerProver) error); ok {
+		r1 = rf(input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BlobOuterProof provides a mock function with given fields: batchProof, blonInnerProof
+func (_m *ProverMock) BlobOuterProof(batchProof string, blonInnerProof string) (*string, error) {
+	ret := _m.Called(batchProof, blonInnerProof)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BlobOuterProof")
+	}
+
+	var r0 *string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string) (*string, error)); ok {
+		return rf(batchProof, blonInnerProof)
+	}
+	if rf, ok := ret.Get(0).(func(string, string) *string); ok {
+		r0 = rf(batchProof, blonInnerProof)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(batchProof, blonInnerProof)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FinalProof provides a mock function with given fields: inputProof, aggregatorAddr
 func (_m *ProverMock) FinalProof(inputProof string, aggregatorAddr string) (*string, error) {
 	ret := _m.Called(inputProof, aggregatorAddr)

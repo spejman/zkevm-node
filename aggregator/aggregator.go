@@ -39,7 +39,7 @@ const (
 type finalProofMsg struct {
 	proverName     string
 	proverID       string
-	recursiveProof *state.Proof
+	recursiveProof *state.BatchProof
 	finalProof     *prover.FinalProof
 }
 
@@ -322,7 +322,7 @@ func (a *Aggregator) isSynced(ctx context.Context, batchNum *uint64) bool {
 	return true
 }
 
-func (a *Aggregator) buildInputProver(ctx context.Context, batchToVerify *state.Batch) (*prover.InputProver, error) {
+func (a *Aggregator) buildBatchProverInputs(ctx context.Context, batchToVerify *state.Batch) (*prover.InputProver, error) {
 	previousBatch, err := a.State.GetBatchByNumber(ctx, batchToVerify.BatchNumber-1, nil)
 	if err != nil && err != state.ErrNotFound {
 		return nil, fmt.Errorf("failed to get previous batch, err: %v", err)
@@ -347,7 +347,7 @@ func (a *Aggregator) buildInputProver(ctx context.Context, batchToVerify *state.
 		return nil, err
 	}
 	l1InfoRoot := vb.L1InfoRoot
-	forcedBlockhashL1 := common.Hash{}
+	//forcedBlockhashL1 := common.Hash{}
 
 	if !isForcedBatch {
 		tree, err := l1infotree.NewL1InfoTree(32, [][32]byte{}) // nolint:gomnd
@@ -408,55 +408,86 @@ func (a *Aggregator) buildInputProver(ctx context.Context, batchToVerify *state.
 	} else {
 		// Initial batch must be handled differently
 		if batchToVerify.BatchNumber == 1 || batchToVerify.BatchNumber == a.cfg.UpgradeEtrogBatchNumber {
-			forcedBlockhashL1, err = a.State.GetVirtualBatchParentHash(ctx, batchToVerify.BatchNumber, nil)
+			//forcedBlockhashL1, err = a.State.GetVirtualBatchParentHash(ctx, batchToVerify.BatchNumber, nil)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			forcedBlockhashL1, err = a.State.GetForcedBatchParentHash(ctx, *batchToVerify.ForcedBatchNum, nil)
+			//forcedBlockhashL1, err = a.State.GetForcedBatchParentHash(ctx, *batchToVerify.ForcedBatchNum, nil)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
+	//TODO: Review prover request fields (feijoa)
 	inputProver := &prover.InputProver{
 		PublicInputs: &prover.PublicInputs{
-			OldStateRoot:      previousBatch.StateRoot.Bytes(),
-			OldAccInputHash:   previousBatch.AccInputHash.Bytes(),
-			OldBatchNum:       previousBatch.BatchNumber,
-			ChainId:           a.cfg.ChainID,
-			ForkId:            forkId9,
-			BatchL2Data:       batchToVerify.BatchL2Data,
-			L1InfoRoot:        l1InfoRoot.Bytes(),
-			TimestampLimit:    uint64(batchToVerify.Timestamp.Unix()),
-			SequencerAddr:     batchToVerify.Coinbase.String(),
-			AggregatorAddr:    a.cfg.SenderAddress,
-			L1InfoTreeData:    l1InfoTreeData,
-			ForcedBlockhashL1: forcedBlockhashL1.Bytes(),
+			OldStateRoot: previousBatch.StateRoot.Bytes(),
+			//OldBatchAccInputHash:
+			//PreviousL1InfoTreeRoot:
+			//PreviousL1InfoTreeIndex:
+			ChainId:       a.cfg.ChainID,
+			ForkId:        a.cfg.ForkId,
+			BatchL2Data:   batchToVerify.BatchL2Data,
+			SequencerAddr: batchToVerify.Coinbase.String(),
+			//Type:
+			//ForcedHashData:
+			//ForcedData:
+			AggregatorAddr: a.cfg.SenderAddress,
+			L1InfoTreeData: l1InfoTreeData,
 		},
 		Db:                map[string]string{},
 		ContractsBytecode: map[string]string{},
 	}
 
-	printInputProver(inputProver)
+	printBatchProverInputs(inputProver)
 
 	return inputProver, nil
 }
 
-func printInputProver(inputProver *prover.InputProver) {
+func printBatchProverInputs(inputProver *prover.InputProver) {
+	//TODO: Review fields to log (feijoa)
 	log.Debugf("OldStateRoot: %v", common.BytesToHash(inputProver.PublicInputs.OldStateRoot))
-	log.Debugf("OldAccInputHash: %v", common.BytesToHash(inputProver.PublicInputs.OldAccInputHash))
-	log.Debugf("OldBatchNum: %v", inputProver.PublicInputs.OldBatchNum)
+	log.Debugf("OldAccInputHash: %v", common.BytesToHash(inputProver.PublicInputs.OldBatchAccInputHash))
+	//log.Debugf("OldBatchNum: %v", inputProver.PublicInputs.OldBatchNum)
 	log.Debugf("ChainId: %v", inputProver.PublicInputs.ChainId)
 	log.Debugf("ForkId: %v", inputProver.PublicInputs.ForkId)
 	log.Debugf("BatchL2Data: %v", common.Bytes2Hex(inputProver.PublicInputs.BatchL2Data))
-	log.Debugf("L1InfoRoot: %v", common.BytesToHash(inputProver.PublicInputs.L1InfoRoot))
-	log.Debugf("TimestampLimit: %v", inputProver.PublicInputs.TimestampLimit)
+	//log.Debugf("L1InfoRoot: %v", common.BytesToHash(inputProver.PublicInputs.L1InfoRoot))
+	//log.Debugf("TimestampLimit: %v", inputProver.PublicInputs.TimestampLimit)
 	log.Debugf("SequencerAddr: %v", inputProver.PublicInputs.SequencerAddr)
 	log.Debugf("AggregatorAddr: %v", inputProver.PublicInputs.AggregatorAddr)
 	log.Debugf("L1InfoTreeData: %+v", inputProver.PublicInputs.L1InfoTreeData)
-	log.Debugf("ForcedBlockhashL1: %v", common.Bytes2Hex(inputProver.PublicInputs.ForcedBlockhashL1))
+	//log.Debugf("ForcedBlockhashL1: %v", common.Bytes2Hex(inputProver.PublicInputs.ForcedBlockhashL1))
+}
+
+func (a *Aggregator) buildBlobInnerProverInputs(ctx context.Context, blobInnerProof *state.BlobInner) (*prover.InputBlobInnerProver, error) {
+	//TODO: Build BlobInner request (feijoa)
+	request := &prover.InputBlobInnerProver{
+		PublicInputs: &prover.PublicBlobInnerInputs{
+			//OldBlobStateRoot:
+			//OldBlobAccInputHash:
+			//OldNumBlob:
+			//OldStateRoot:
+			ForkId:              a.cfg.ForkId,
+			LastL1InfoTreeIndex: blobInnerProof.PreviousL1InfoTreeIndex,
+			LastL1InfoTreeRoot:  blobInnerProof.PreviousL1InfoTreeRoot.Bytes(),
+			//SequencerAddr:
+			//TimestampLimit:
+			//ZkGasLimit:
+			//Type:
+			//PointZ: l1InfoTreeData,
+			//PointY: l1InfoTreeData,
+			//BlobData:
+			//ForcedHashData:
+		},
+	}
+	return request, nil
+}
+
+func (a *Aggregator) printBlobInnerProverInputs(*prover.InputBlobInnerProver) {
+	//TODO: implement
 }
 
 // healthChecker will provide an implementation of the HealthCheck interface.
@@ -547,6 +578,23 @@ func (a *Aggregator) cleanupLockedProofs() {
 			}
 		}
 	}
+}
+
+func (a *Aggregator) getMaxL1BlockNumber(ctx context.Context) (uint64, error) {
+	// Get header of the last L1 block
+	lastL1BlockHeader, err := a.Ethman.GetLatestBlockHeader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	lastL1BlockNumber := lastL1BlockHeader.Number.Uint64()
+
+	// Calculate max L1 block number for getting next virtual batch or blob inner to prove
+	maxL1BlockNumber := uint64(0)
+	if a.cfg.BatchProofL1BlockConfirmations <= lastL1BlockNumber {
+		maxL1BlockNumber = lastL1BlockNumber - a.cfg.BatchProofL1BlockConfirmations
+	}
+
+	return maxL1BlockNumber, nil
 }
 
 // FirstToUpper returns the string passed as argument with the first letter in

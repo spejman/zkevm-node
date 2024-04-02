@@ -464,36 +464,42 @@ func TestCleanupLockedProofs(t *testing.T) {
 	now := time.Now().Round(time.Microsecond)
 	oneHourAgo := now.Add(-time.Hour).Round(time.Microsecond)
 	olderProofID := "olderProofID"
-	olderProof := state.Proof{
-		ProofID:          &olderProofID,
+	olderProof := state.BatchProof{
 		BatchNumber:      batchNumber,
 		BatchNumberFinal: batchNumber,
-		GeneratingSince:  &oneHourAgo,
+		Proof: state.Proof{
+			Id:              &olderProofID,
+			GeneratingSince: &oneHourAgo,
+		},
 	}
-	_, err := testState.Exec(ctx, addGeneratedProofSQL, olderProof.BatchNumber, olderProof.BatchNumberFinal, olderProof.Proof, olderProof.ProofID, olderProof.InputProver, olderProof.Prover, olderProof.ProverID, olderProof.GeneratingSince, oneHourAgo, oneHourAgo)
+	_, err := testState.Exec(ctx, addGeneratedProofSQL, olderProof.BatchNumber, olderProof.BatchNumberFinal, olderProof.Proof, olderProof.Id, olderProof.InputProver, olderProof.Prover, olderProof.ProverID, olderProof.GeneratingSince, oneHourAgo, oneHourAgo)
 	require.NoError(err)
 	// proof with `generating_since` newer than interval
 	newerProofID := "newerProofID"
-	newerProof := state.Proof{
-		ProofID:          &newerProofID,
+	newerProof := state.BatchProof{
+		Proof: state.Proof{
+			Id:              &newerProofID,
+			GeneratingSince: &now,
+			CreatedAt:       oneHourAgo,
+			UpdatedAt:       now,
+		},
 		BatchNumber:      batchNumber + 1,
 		BatchNumberFinal: batchNumber + 1,
-		GeneratingSince:  &now,
-		CreatedAt:        oneHourAgo,
-		UpdatedAt:        now,
 	}
-	_, err = testState.Exec(ctx, addGeneratedProofSQL, newerProof.BatchNumber, newerProof.BatchNumberFinal, newerProof.Proof, newerProof.ProofID, newerProof.InputProver, newerProof.Prover, newerProof.ProverID, newerProof.GeneratingSince, oneHourAgo, now)
+	_, err = testState.Exec(ctx, addGeneratedProofSQL, newerProof.BatchNumber, newerProof.BatchNumberFinal, newerProof.Proof, newerProof.Id, newerProof.InputProver, newerProof.Prover, newerProof.ProverID, newerProof.GeneratingSince, oneHourAgo, now)
 	require.NoError(err)
 	// proof with `generating_since` nil (currently not generating)
 	olderNotGenProofID := "olderNotGenProofID"
-	olderNotGenProof := state.Proof{
-		ProofID:          &olderNotGenProofID,
+	olderNotGenProof := state.BatchProof{
+		Proof: state.Proof{
+			Id:        &olderNotGenProofID,
+			CreatedAt: oneHourAgo,
+			UpdatedAt: oneHourAgo,
+		},
 		BatchNumber:      batchNumber + 2,
 		BatchNumberFinal: batchNumber + 2,
-		CreatedAt:        oneHourAgo,
-		UpdatedAt:        oneHourAgo,
 	}
-	_, err = testState.Exec(ctx, addGeneratedProofSQL, olderNotGenProof.BatchNumber, olderNotGenProof.BatchNumberFinal, olderNotGenProof.Proof, olderNotGenProof.ProofID, olderNotGenProof.InputProver, olderNotGenProof.Prover, olderNotGenProof.ProverID, olderNotGenProof.GeneratingSince, oneHourAgo, oneHourAgo)
+	_, err = testState.Exec(ctx, addGeneratedProofSQL, olderNotGenProof.BatchNumber, olderNotGenProof.BatchNumberFinal, olderNotGenProof.Proof, olderNotGenProof.Id, olderNotGenProof.InputProver, olderNotGenProof.Prover, olderNotGenProof.ProverID, olderNotGenProof.GeneratingSince, oneHourAgo, oneHourAgo)
 	require.NoError(err)
 
 	_, err = testState.CleanupLockedBatchProofs(ctx, "1m", nil)
@@ -501,14 +507,14 @@ func TestCleanupLockedProofs(t *testing.T) {
 	require.NoError(err)
 	rows, err := testState.Query(ctx, "SELECT batch_num, batch_num_final, proof, proof_id, input_prover, prover, prover_id, generating_since, created_at, updated_at FROM state.batch_proof")
 	require.NoError(err)
-	proofs := make([]state.Proof, 0, len(rows.RawValues()))
+	proofs := make([]state.BatchProof, 0, len(rows.RawValues()))
 	for rows.Next() {
-		var proof state.Proof
+		var proof state.BatchProof
 		err := rows.Scan(
 			&proof.BatchNumber,
 			&proof.BatchNumberFinal,
 			&proof.Proof,
-			&proof.ProofID,
+			&proof.Id,
 			&proof.InputProver,
 			&proof.Prover,
 			&proof.ProverID,

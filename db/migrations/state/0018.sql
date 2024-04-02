@@ -4,6 +4,8 @@ CREATE TABLE state.blob_inner
     blob_inner_num BIGINT PRIMARY KEY,
     data           BYTEA,
     block_num      BIGINT NOT NULL REFERENCES state.block (block_num) ON DELETE CASCADE    
+    ADD COLUMN IF NOT EXISTS prev_l1_it_root VARCHAR,
+    ADD COLUMN IF NOT EXISTS prev_l1_it_index BIGINT;
 );
 
 ALTER TABLE state.virtual_batch

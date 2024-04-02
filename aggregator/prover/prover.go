@@ -100,8 +100,7 @@ func (p *Prover) SupportsForkID(forkID uint64) bool {
 	return status.ForkId == forkID
 }
 
-// BatchProof instructs the prover to generate a batch proof for the provided
-// input. It returns the ID of the proof being computed.
+// BatchProof instructs the prover to generate a batch proof for the provided input. It returns the Id of the proof being computed
 func (p *Prover) BatchProof(input *InputProver) (*string, error) {
 	metrics.WorkingProver()
 
@@ -115,32 +114,32 @@ func (p *Prover) BatchProof(input *InputProver) (*string, error) {
 		return nil, err
 	}
 
+	//TODO: Review error codes returned
 	if msg, ok := res.Response.(*ProverMessage_GenBatchProofResponse); ok {
 		switch msg.GenBatchProofResponse.Result {
 		case Result_RESULT_UNSPECIFIED:
-			return nil, fmt.Errorf("failed to generate proof %s, %w, input %v", msg.GenBatchProofResponse.String(), ErrUnspecified, input)
+			return nil, fmt.Errorf("failed to generate batch proof %s, error: %v, input %v", msg.GenBatchProofResponse.String(), ErrUnspecified, input)
 		case Result_RESULT_OK:
 			return &msg.GenBatchProofResponse.Id, nil
 		case Result_RESULT_ERROR:
-			return nil, fmt.Errorf("failed to generate proof %s, %w, input %v", msg.GenBatchProofResponse.String(), ErrBadRequest, input)
+			return nil, fmt.Errorf("failed to generate batch proof %s, error: %v, input %v", msg.GenBatchProofResponse.String(), ErrBadRequest, input)
 		case Result_RESULT_INTERNAL_ERROR:
-			return nil, fmt.Errorf("failed to generate proof %s, %w, input %v", msg.GenBatchProofResponse.String(), ErrProverInternalError, input)
+			return nil, fmt.Errorf("failed to generate batch proof %s, error: %v, input %v", msg.GenBatchProofResponse.String(), ErrProverInternalError, input)
 		default:
-			return nil, fmt.Errorf("failed to generate proof %s, %w,input %v", msg.GenBatchProofResponse.String(), ErrUnknown, input)
+			return nil, fmt.Errorf("failed to generate batch proof %s, error: %v,input %v", msg.GenBatchProofResponse.String(), ErrUnknown, input)
 		}
 	}
 
 	return nil, fmt.Errorf("%w, wanted %T, got %T", ErrBadProverResponse, &ProverMessage_GenBatchProofResponse{}, res.Response)
 }
 
-// AggregatedProof instructs the prover to generate an aggregated proof from
-// the two inputs provided. It returns the ID of the proof being computed.
+// AggregatedProof instructs the prover to generate an aggregated proof from the two proof inputs provided. It returns the Id of the proof being computed
 func (p *Prover) AggregatedProof(inputProof1, inputProof2 string) (*string, error) {
 	metrics.WorkingProver()
 
 	req := &AggregatorMessage{
-		Request: &AggregatorMessage_GenAggregatedProofRequest{
-			GenAggregatedProofRequest: &GenAggregatedProofRequest{
+		Request: &AggregatorMessage_GenAggregatedBatchProofRequest{
+			GenAggregatedBatchProofRequest: &GenAggregatedBatchProofRequest{
 				RecursiveProof_1: inputProof1,
 				RecursiveProof_2: inputProof2,
 			},
@@ -151,26 +150,93 @@ func (p *Prover) AggregatedProof(inputProof1, inputProof2 string) (*string, erro
 		return nil, err
 	}
 
-	if msg, ok := res.Response.(*ProverMessage_GenAggregatedProofResponse); ok {
-		switch msg.GenAggregatedProofResponse.Result {
+	//TODO: Review error codes returned
+	if msg, ok := res.Response.(*ProverMessage_GenAggregatedBatchProofResponse); ok {
+		switch msg.GenAggregatedBatchProofResponse.Result {
 		case Result_RESULT_UNSPECIFIED:
-			return nil, fmt.Errorf("failed to aggregate proofs %s, %w, input 1 %s, input 2 %s",
-				msg.GenAggregatedProofResponse.String(), ErrUnspecified, inputProof1, inputProof2)
+			return nil, fmt.Errorf("failed to aggregate proofs %s, error: %v, input 1 %s, input 2 %s",
+				msg.GenAggregatedBatchProofResponse.String(), ErrUnspecified, inputProof1, inputProof2)
 		case Result_RESULT_OK:
-			return &msg.GenAggregatedProofResponse.Id, nil
+			return &msg.GenAggregatedBatchProofResponse.Id, nil
 		case Result_RESULT_ERROR:
-			return nil, fmt.Errorf("failed to aggregate proofs %s, %w, input 1 %s, input 2 %s",
-				msg.GenAggregatedProofResponse.String(), ErrBadRequest, inputProof1, inputProof2)
+			return nil, fmt.Errorf("failed to aggregate proofs %s, error: %v, input 1 %s, input 2 %s",
+				msg.GenAggregatedBatchProofResponse.String(), ErrBadRequest, inputProof1, inputProof2)
 		case Result_RESULT_INTERNAL_ERROR:
-			return nil, fmt.Errorf("failed to aggregate proofs %s, %w, input 1 %s, input 2 %s",
-				msg.GenAggregatedProofResponse.String(), ErrProverInternalError, inputProof1, inputProof2)
+			return nil, fmt.Errorf("failed to aggregate proofs %s, error: %v, input 1 %s, input 2 %s",
+				msg.GenAggregatedBatchProofResponse.String(), ErrProverInternalError, inputProof1, inputProof2)
 		default:
-			return nil, fmt.Errorf("failed to aggregate proofs %s, %w, input 1 %s, input 2 %s",
-				msg.GenAggregatedProofResponse.String(), ErrUnknown, inputProof1, inputProof2)
+			return nil, fmt.Errorf("failed to aggregate proofs %s, error: %v, input 1 %s, input 2 %s",
+				msg.GenAggregatedBatchProofResponse.String(), ErrUnknown, inputProof1, inputProof2)
 		}
 	}
 
-	return nil, fmt.Errorf("%w, wanted %T, got %T", ErrBadProverResponse, &ProverMessage_GenAggregatedProofResponse{}, res.Response)
+	return nil, fmt.Errorf("%w, wanted %T, got %T", ErrBadProverResponse, &ProverMessage_GenAggregatedBatchProofResponse{}, res.Response)
+}
+
+// BlobInnerProof instructs the prover to generate a blobInner proof for the provided input. It returns the Id of the proof being computed.
+func (p *Prover) BlobInnerProof(input *InputBlobInnerProver) (*string, error) {
+	metrics.WorkingProver()
+
+	req := &AggregatorMessage{
+		Request: &AggregatorMessage_GenBlobInnerProofRequest{
+			GenBlobInnerProofRequest: &GenBlobInnerProofRequest{Input: input},
+		},
+	}
+	res, err := p.call(req)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: Review error codes returned
+	if msg, ok := res.Response.(*ProverMessage_GenBlobInnerProofResponse); ok {
+		switch msg.GenBlobInnerProofResponse.Result {
+		case Result_RESULT_UNSPECIFIED:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, input %v", msg.GenBlobInnerProofResponse.String(), ErrUnspecified, input)
+		case Result_RESULT_OK:
+			return &msg.GenBlobInnerProofResponse.Id, nil
+		case Result_RESULT_ERROR:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, input %v", msg.GenBlobInnerProofResponse.String(), ErrBadRequest, input)
+		case Result_RESULT_INTERNAL_ERROR:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, input %v", msg.GenBlobInnerProofResponse.String(), ErrProverInternalError, input)
+		default:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, input %v", msg.GenBlobInnerProofResponse.String(), ErrUnknown, input)
+		}
+	}
+
+	return nil, fmt.Errorf("%w, wanted %T, got %T", ErrBadProverResponse, &ProverMessage_GenBatchProofResponse{}, res.Response)
+}
+
+// BlobOuterProof instructs the prover to generate a blobOuter proof from tha batch and blobInner proofs provided. It returns the Id of the proof being computed.
+func (p *Prover) BlobOuterProof(batchProof, blonInnerProof string) (*string, error) {
+	metrics.WorkingProver()
+
+	req := &AggregatorMessage{
+		Request: &AggregatorMessage_GenBlobOuterProofRequest{
+			GenBlobOuterProofRequest: &GenBlobOuterProofRequest{BatchProof: batchProof, BlobInnerProof: blonInnerProof},
+		},
+	}
+	res, err := p.call(req)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: Review error codes returned
+	if msg, ok := res.Response.(*ProverMessage_GenBlobOuterProofResponse); ok {
+		switch msg.GenBlobOuterProofResponse.Result {
+		case Result_RESULT_UNSPECIFIED:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, batchProof: %v, blobInnerProof: %v", msg.GenBlobOuterProofResponse.String(), ErrUnspecified, batchProof, blonInnerProof)
+		case Result_RESULT_OK:
+			return &msg.GenBlobOuterProofResponse.Id, nil
+		case Result_RESULT_ERROR:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, batchProof: %v, blobInnerProof: %v", msg.GenBlobOuterProofResponse.String(), ErrBadRequest, batchProof, blonInnerProof)
+		case Result_RESULT_INTERNAL_ERROR:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, batchProof: %v, blobInnerProof: %v", msg.GenBlobOuterProofResponse.String(), ErrProverInternalError, batchProof, blonInnerProof)
+		default:
+			return nil, fmt.Errorf("failed to generate blobInner proof %s, error: %v, batchProof: %v, blobInnerProof: %v", msg.GenBlobOuterProofResponse.String(), ErrUnknown, batchProof, blonInnerProof)
+		}
+	}
+
+	return nil, fmt.Errorf("%w, wanted %T, got %T", ErrBadProverResponse, &ProverMessage_GenBatchProofResponse{}, res.Response)
 }
 
 // FinalProof instructs the prover to generate a final proof for the given

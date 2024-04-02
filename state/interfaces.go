@@ -99,15 +99,24 @@ type storage interface {
 	AddSequence(ctx context.Context, sequence Sequence, dbTx pgx.Tx) error
 	GetSequences(ctx context.Context, lastVerifiedBatchNumber uint64, dbTx pgx.Tx) ([]Sequence, error)
 	GetVirtualBatchToProve(ctx context.Context, lastVerfiedBatchNumber uint64, maxL1Block uint64, dbTx pgx.Tx) (*Batch, error)
-	CheckProofContainsCompleteSequences(ctx context.Context, proof *Proof, dbTx pgx.Tx) (bool, error)
-	GetProofReadyForFinal(ctx context.Context, lastVerfiedBatchNumber uint64, dbTx pgx.Tx) (*Proof, error)
-	GetBatchProofsToAggregate(ctx context.Context, dbTx pgx.Tx) (*Proof, *Proof, error)
-	AddBatchProof(ctx context.Context, proof *Proof, dbTx pgx.Tx) error
-	UpdateBatchProof(ctx context.Context, proof *Proof, dbTx pgx.Tx) error
+	CheckProofContainsCompleteSequences(ctx context.Context, proof *BatchProof, dbTx pgx.Tx) (bool, error)
+	GetProofReadyForFinal(ctx context.Context, lastVerfiedBatchNumber uint64, dbTx pgx.Tx) (*BatchProof, error)
+	GetBatchProofsToAggregate(ctx context.Context, dbTx pgx.Tx) (*BatchProof, *BatchProof, error)
+	AddBatchProof(ctx context.Context, proof *BatchProof, dbTx pgx.Tx) error
+	UpdateBatchProof(ctx context.Context, proof *BatchProof, dbTx pgx.Tx) error
 	DeleteBatchProofs(ctx context.Context, batchNumber uint64, batchNumberFinal uint64, dbTx pgx.Tx) error
 	CleanupBatchProofs(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) error
 	CleanupLockedBatchProofs(ctx context.Context, duration string, dbTx pgx.Tx) (int64, error)
 	DeleteUngeneratedBatchProofs(ctx context.Context, dbTx pgx.Tx) error
+	GetLastVerifiedBlobInner(ctx context.Context, dbTx pgx.Tx) (*BlobInner, error)
+	GetBlobInnerToProve(ctx context.Context, lastVerfiedBlobInnerNumber uint64, maxL1Block uint64, dbTx pgx.Tx) (*BlobInner, error)
+	AddBlobInnerProof(ctx context.Context, proof *BlobInnerProof, dbTx pgx.Tx) error
+	UpdateBlobInnerProof(ctx context.Context, proof *BlobInnerProof, dbTx pgx.Tx) error
+	DeleteBlobInnerProof(ctx context.Context, blobInnerNum uint64, dbTx pgx.Tx) error
+	GetBlobOuterToProve(ctx context.Context, dbTx pgx.Tx) (*BatchProof, *BlobInnerProof, error)
+	AddBlobOuterProof(ctx context.Context, proof *BlobOuterProof, dbTx pgx.Tx) error
+	UpdateBlobOuterProof(ctx context.Context, proof *BlobOuterProof, dbTx pgx.Tx) error
+	DeleteBlobOuterProof(ctx context.Context, blobOuterNumber uint64, blobOuterNumberFinal uint64, dbTx pgx.Tx) error
 	GetLastClosedBatch(ctx context.Context, dbTx pgx.Tx) (*Batch, error)
 	GetLastClosedBatchNumber(ctx context.Context, dbTx pgx.Tx) (uint64, error)
 	UpdateBatchL2Data(ctx context.Context, batchNumber uint64, batchL2Data []byte, dbTx pgx.Tx) error

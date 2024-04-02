@@ -143,6 +143,15 @@ type Sequence struct {
 	ToBatchNumber   uint64
 }
 
+// BlobInner struct
+type BlobInner struct {
+	BlobInnerNum            uint64
+	Data                    []byte
+	BlockNumber             uint64
+	PreviousL1InfoTreeIndex uint32
+	PreviousL1InfoTreeRoot  common.Hash
+}
+
 // OpenBatch adds a new batch into the state, with the necessary data to start processing transactions within it.
 // It's meant to be used by sequencers, since they don't necessarily know what transactions are going to be added
 // in this batch yet. In other words it's the creation of a WIP batch.

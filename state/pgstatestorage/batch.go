@@ -762,45 +762,6 @@ func (p *PostgresStorage) GetLastVerifiedBatch(ctx context.Context, dbTx pgx.Tx)
 	return &verifiedBatch, nil
 }
 
-// GetVirtualBatchToProve return the next batch that is not proved, neither in
-// proved process.
-func (p *PostgresStorage) GetVirtualBatchToProve(ctx context.Context, lastVerfiedBatchNumber uint64, maxL1Block uint64, dbTx pgx.Tx) (*state.Batch, error) {
-	const query = `
-		SELECT
-			b.batch_num,
-			b.global_exit_root,
-			b.local_exit_root,
-			b.acc_input_hash,
-			b.state_root,
-			v.timestamp_batch_etrog,
-			b.coinbase,
-			b.raw_txs_data,
-			b.forced_batch_num,
-			b.batch_resources, 
-			b.wip
-		FROM
-			state.batch b,
-			state.virtual_batch v
-		WHERE
-			b.batch_num > $1 AND b.batch_num = v.batch_num AND
-			v.block_num <= $2 AND
-			NOT EXISTS (
-				SELECT p.batch_num FROM state.batch_proof p 
-				WHERE v.batch_num >= p.batch_num AND v.batch_num <= p.batch_num_final
-			)
-		ORDER BY b.batch_num ASC LIMIT 1
-		`
-	e := p.getExecQuerier(dbTx)
-	row := e.QueryRow(ctx, query, lastVerfiedBatchNumber, maxL1Block)
-	batch, err := scanBatch(row)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, state.ErrNotFound
-	} else if err != nil {
-		return nil, err
-	}
-	return &batch, nil
-}
-
 // AddSequence stores the sequence information to allow the aggregator verify sequences.
 func (p *PostgresStorage) AddSequence(ctx context.Context, sequence state.Sequence, dbTx pgx.Tx) error {
 	const addSequenceSQL = "INSERT INTO state.sequences (from_batch_num, to_batch_num) VALUES($1, $2) ON CONFLICT (from_batch_num) DO UPDATE SET to_batch_num = $2"

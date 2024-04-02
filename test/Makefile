@@ -133,7 +133,7 @@ test-e2e-group-1: stop ## Runs group 1 e2e tests checking race conditions
 	$(RUNZKPROVER)
 	docker ps -a
 	docker logs $(DOCKERCOMPOSEZKPROVER)
-	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -count=1 -failfast -race -v -p 1 -timeout 600s ../ci/e2e-group1/...
+	go test -count=1 -failfast -race -v -p 1 -timeout 600s ../ci/e2e-group1/...
 
 .PHONY: test-e2e-group-2
 test-e2e-group-2: stop ## Runs group 2 e2e tests checking race conditions
@@ -577,7 +577,6 @@ run: ## Runs a full node
 	$(RUNSYNC)
 	sleep 4
 	$(RUNETHTXMANAGER)
-	$(RUNSEQUENCER)
 	$(RUNSEQUENCESENDER)
 	$(RUNL2GASPRICER)
 	$(RUNAGGREGATOR)

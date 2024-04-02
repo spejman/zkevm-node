@@ -19,7 +19,7 @@ import (
 // build the final proof.  If no proof is provided it looks for a previously
 // generated proof.  If the proof is eligible, then the final proof generation
 // is triggered.
-func (a *Aggregator) tryBuildFinalProof(ctx context.Context, prover proverInterface, proof *state.Proof) (bool, error) {
+func (a *Aggregator) tryBuildFinalProof(ctx context.Context, prover proverInterface, proof *state.BatchProof) (bool, error) {
 	proverName := prover.Name()
 	proverID := prover.ID()
 
@@ -89,7 +89,7 @@ func (a *Aggregator) tryBuildFinalProof(ctx context.Context, prover proverInterf
 	}
 
 	log = log.WithFields(
-		"proofId", *proof.ProofID,
+		"proofId", *proof.Id,
 		"batches", fmt.Sprintf("%d-%d", proof.BatchNumber, proof.BatchNumberFinal),
 	)
 
@@ -119,26 +119,26 @@ func (a *Aggregator) tryBuildFinalProof(ctx context.Context, prover proverInterf
 }
 
 // buildFinalProof builds and return the final proof for an aggregated/batch proof.
-func (a *Aggregator) buildFinalProof(ctx context.Context, prover proverInterface, proof *state.Proof) (*prover.FinalProof, error) {
+func (a *Aggregator) buildFinalProof(ctx context.Context, prover proverInterface, proof *state.BatchProof) (*prover.FinalProof, error) {
 	log := log.WithFields(
 		"prover", prover.Name(),
 		"proverId", prover.ID(),
 		"proverAddr", prover.Addr(),
-		"recursiveProofId", *proof.ProofID,
+		"recursiveProofId", *proof.Id,
 		"batches", fmt.Sprintf("%d-%d", proof.BatchNumber, proof.BatchNumberFinal),
 	)
 	log.Info("Generating final proof")
 
-	finalProofID, err := prover.FinalProof(proof.Proof, a.cfg.SenderAddress)
+	finalProofID, err := prover.FinalProof(proof.Data, a.cfg.SenderAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get final proof id: %w", err)
 	}
-	proof.ProofID = finalProofID
+	proof.Id = finalProofID
 
-	log.Infof("Final proof ID for batches [%d-%d]: %s", proof.BatchNumber, proof.BatchNumberFinal, *proof.ProofID)
+	log.Infof("Final proof ID for batches [%d-%d]: %s", proof.BatchNumber, proof.BatchNumberFinal, *proof.Id)
 	log = log.WithFields("finalProofId", finalProofID)
 
-	finalProof, err := prover.WaitFinalProof(ctx, *proof.ProofID)
+	finalProof, err := prover.WaitFinalProof(ctx, *proof.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get final proof from prover: %w", err)
 	}
@@ -162,7 +162,7 @@ func (a *Aggregator) buildFinalProof(ctx context.Context, prover proverInterface
 	return finalProof, nil
 }
 
-func (a *Aggregator) getAndLockProofReadyForFinal(ctx context.Context, prover proverInterface, lastVerifiedBatchNum uint64) (*state.Proof, error) {
+func (a *Aggregator) getAndLockProofReadyForFinal(ctx context.Context, prover proverInterface, lastVerifiedBatchNum uint64) (*state.BatchProof, error) {
 	a.StateDBMutex.Lock()
 	defer a.StateDBMutex.Unlock()
 
@@ -183,7 +183,7 @@ func (a *Aggregator) getAndLockProofReadyForFinal(ctx context.Context, prover pr
 	return proofToVerify, nil
 }
 
-func (a *Aggregator) validateEligibleFinalProof(ctx context.Context, proof *state.Proof, lastVerifiedBatchNum uint64) (bool, error) {
+func (a *Aggregator) validateEligibleFinalProof(ctx context.Context, proof *state.BatchProof, lastVerifiedBatchNum uint64) (bool, error) {
 	batchNumberToVerify := lastVerifiedBatchNum + 1
 
 	if proof.BatchNumber != batchNumberToVerify {
@@ -229,7 +229,7 @@ func (a *Aggregator) sendFinalProof() {
 			ctx := a.ctx
 			proof := msg.recursiveProof
 
-			log.WithFields("proofId", proof.ProofID, "batches", fmt.Sprintf("%d-%d", proof.BatchNumber, proof.BatchNumberFinal))
+			log.WithFields("proofId", proof.Id, "batches", fmt.Sprintf("%d-%d", proof.BatchNumber, proof.BatchNumberFinal))
 			log.Info("Verifying final proof with ethereum smart contract")
 
 			a.startProofVerification()
@@ -277,8 +277,8 @@ func (a *Aggregator) sendFinalProof() {
 	}
 }
 
-func (a *Aggregator) handleErrorSendFinalProof(ctx context.Context, proof *state.Proof) {
-	log := log.WithFields("proofId", proof.ProofID, "batches", fmt.Sprintf("%d-%d", proof.BatchNumber, proof.BatchNumberFinal))
+func (a *Aggregator) handleErrorSendFinalProof(ctx context.Context, proof *state.BatchProof) {
+	log := log.WithFields("proofId", proof.Id, "batches", fmt.Sprintf("%d-%d", proof.BatchNumber, proof.BatchNumberFinal))
 	proof.GeneratingSince = nil
 	err := a.State.UpdateBatchProof(ctx, proof, nil)
 	if err != nil {

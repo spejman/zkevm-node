@@ -8,7 +8,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-node/hex"
 	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/0xPolygonHermez/zkevm-node/test/operations"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -22,8 +21,7 @@ func main() {
 		ChainID    uint64
 		PrivateKey string
 	}{
-		//{Name: "Local L1", URL: operations.DefaultL1NetworkURL, ChainID: operations.DefaultL1ChainID, PrivateKey: operations.DefaultSequencerPrivateKey},
-		{Name: "Local L2", URL: operations.DefaultL2NetworkURL, ChainID: operations.DefaultL2ChainID, PrivateKey: operations.DefaultSequencerPrivateKey},
+		{Name: "Local L2", URL: "http://localhost:8467", ChainID: 999999, PrivateKey: "0x26e86e45f6fc45ec6e2ecd128cec80fa1d1505e5507dcd2ae58c3130a7a97b48"},
 	}
 
 	for _, network := range networks {
@@ -39,25 +37,15 @@ func main() {
 
 		const receiverAddr = "0x617b3a3528F9cDd6630fd3301B9c8911F7Bf063D"
 
-		balance, err := client.BalanceAt(ctx, auth.From, nil)
-		chkErr(err)
-		log.Debugf("ETH Balance for %v: %v", auth.From, balance)
-
-		// Valid ETH Transfer
-		balance, err = client.BalanceAt(ctx, auth.From, nil)
-		log.Debugf("ETH Balance for %v: %v", auth.From, balance)
-		chkErr(err)
 		transferAmount := big.NewInt(1)
-		log.Debugf("Transfer Amount: %v", transferAmount)
+		//nonce := uint64(0)
 
-		nonce, err := client.NonceAt(ctx, auth.From, nil)
-		chkErr(err)
 		// var lastTxHash common.Hash
-		for i := 0; i < 1000; i++ {
-			nonce := nonce + uint64(i)
+		for i := 0; i < 1; i++ {
+			//nonce := nonce + uint64(i)
 			log.Debugf("Sending TX to transfer ETH")
 			to := common.HexToAddress(receiverAddr)
-			tx := ethTransfer(ctx, client, auth, to, transferAmount, &nonce)
+			tx := ethTransfer(ctx, client, auth, to, transferAmount, nil)
 			fmt.Println("tx sent: ", tx.Hash().String())
 			// lastTxHash = tx.Hash()
 		}
@@ -77,11 +65,9 @@ func ethTransfer(ctx context.Context, client *ethclient.Client, auth *bind.Trans
 		nonce = &n
 	}
 
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+	gasPrice, err := client.SuggestGasPrice(ctx)
 	chkErr(err)
-
-	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{To: &to})
-	chkErr(err)
+	gasLimit := uint64(200000)
 
 	tx := types.NewTransaction(*nonce, to, amount, gasLimit, gasPrice, nil)
 
