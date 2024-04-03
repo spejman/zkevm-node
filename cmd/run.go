@@ -305,9 +305,16 @@ func runSynchronizer(cfg config.Config, etherman *etherman.Client, ethTxManagerS
 		}
 		log.Info("trustedSequencerURL ", trustedSequencerURL)
 	}
-	ethClientForL2, err := newL2EthClient(trustedSequencerURL)
-	if err != nil {
-		log.Fatalf("Can't create L2 ethereum client. Err:%w", err)
+	var ethClientForL2 *ethclient.Client
+	if trustedSequencerURL != "" {
+		log.Infof("Creating L2 ethereum client %s", trustedSequencerURL)
+		ethClientForL2, err = newL2EthClient(trustedSequencerURL)
+		if err != nil {
+			log.Fatalf("Can't create L2 ethereum client. Err:%w", err)
+		}
+	} else {
+		ethClientForL2 = nil
+		log.Infof("skipping creating L2 ethereum client because URL is empty")
 	}
 	zkEVMClient := client.NewClient(trustedSequencerURL)
 	etherManForL1 := []syncinterfaces.EthermanFullInterface{}
