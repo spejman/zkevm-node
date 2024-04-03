@@ -307,9 +307,8 @@ func runSynchronizer(cfg config.Config, etherman *etherman.Client, ethTxManagerS
 	}
 	ethClientForL2, err := newL2EthClient(trustedSequencerURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Can't create L2 ethereum client. Err:%w", err)
 	}
-	ethClientForL2.BlockByNumber(context.Background(), nil)
 	zkEVMClient := client.NewClient(trustedSequencerURL)
 	etherManForL1 := []syncinterfaces.EthermanFullInterface{}
 	// If synchronizer are using sequential mode, we only need one etherman client
