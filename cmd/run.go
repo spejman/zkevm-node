@@ -37,6 +37,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-node/state/runtime/executor"
 	"github.com/0xPolygonHermez/zkevm-node/synchronizer"
 	"github.com/0xPolygonHermez/zkevm-node/synchronizer/common/syncinterfaces"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli/v2"
@@ -280,6 +281,15 @@ func newEtherman(c config.Config) (*etherman.Client, error) {
 	return etherman.NewClient(c.Etherman, c.NetworkConfig.L1Config)
 }
 
+func newL2EthClient(url string) (*ethclient.Client, error) {
+	ethClient, err := ethclient.Dial(url)
+	if err != nil {
+		log.Errorf("error connecting L1 to %s: %+v", url, err)
+		return nil, err
+	}
+	return ethClient, nil
+}
+
 func runSynchronizer(cfg config.Config, etherman *etherman.Client, ethTxManagerStorage *ethtxmanager.PostgresStorage, st *state.State, pool *pool.Pool, eventLog *event.EventLog) {
 	var trustedSequencerURL string
 	var err error
@@ -295,6 +305,11 @@ func runSynchronizer(cfg config.Config, etherman *etherman.Client, ethTxManagerS
 		}
 		log.Info("trustedSequencerURL ", trustedSequencerURL)
 	}
+	ethClientForL2, err := newL2EthClient(trustedSequencerURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ethClientForL2.BlockByNumber(context.Background(), nil)
 	zkEVMClient := client.NewClient(trustedSequencerURL)
 	etherManForL1 := []syncinterfaces.EthermanFullInterface{}
 	// If synchronizer are using sequential mode, we only need one etherman client
@@ -310,7 +325,7 @@ func runSynchronizer(cfg config.Config, etherman *etherman.Client, ethTxManagerS
 	etm := ethtxmanager.New(cfg.EthTxManager, etherman, ethTxManagerStorage, st)
 	sy, err := synchronizer.NewSynchronizer(
 		cfg.IsTrustedSequencer, etherman, etherManForL1, st, pool, etm,
-		zkEVMClient, eventLog, cfg.NetworkConfig.Genesis, cfg.Synchronizer, cfg.Log.Environment == "development",
+		zkEVMClient, ethClientForL2, eventLog, cfg.NetworkConfig.Genesis, cfg.Synchronizer, cfg.Log.Environment == "development",
 	)
 	if err != nil {
 		log.Fatal(err)
